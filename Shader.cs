@@ -1,9 +1,10 @@
 ﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 
 public class Shader : IDisposable
 {
-	public int Handle { get; private set; }
-	int VertexShader;
+	int Handle;
+    int VertexShader;
 	int FragmentShader;
 
 	public Shader(string vertexShaderPath, string fragmentShaderPath)
@@ -64,7 +65,40 @@ public class Shader : IDisposable
 		return GL.GetAttribLocation(Handle, attribName);
 	}
 
-	private bool disposedValue = false;
+	public int GetUniformLocation(string uniformName)
+	{
+		return GL.GetUniformLocation(Handle, uniformName);
+	}
+
+    public void SetInt(string name, int value)
+    {
+        int location = GL.GetUniformLocation(Handle, name);
+
+        GL.Uniform1(location, value);
+    }
+
+	public void SetFloat(string name, float value)
+	{
+        int location = GL.GetUniformLocation(Handle, name);
+
+		GL.Uniform1(location, value);
+    }
+
+	public void SetVector2(string name, Vector2 vector)
+	{
+        int location = GL.GetUniformLocation(Handle, name);
+
+        GL.Uniform2(location, vector);
+    }
+
+	public void SetMartix4(string name, ref Matrix4 matrix)
+	{
+        int location = GL.GetUniformLocation(Handle, name);
+        GL.UniformMatrix4(location, true, ref matrix);
+    }
+
+
+    private bool disposedValue = false;
 
 	protected virtual void Dispose(bool disposing)
 	{
