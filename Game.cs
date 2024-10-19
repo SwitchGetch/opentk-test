@@ -27,40 +27,40 @@ public class Game : GameWindow
     float[] vertices =
 	{
 		// передняя грань
-		-0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
 
 		// задняя грань
-        -0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
 
 		// левая грань
-        -0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
 
 		// правая грань
-         0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
 
 		// нижняя грань
-        -0.5f, -0.5f,  0.5f,   0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,   1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,   0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,   1.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
 
 		// верхняя грань
-        -0.5f,  0.5f,  0.5f,   0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,   1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,   0.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,   1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
     };
 
 	uint[] indices =
@@ -89,6 +89,9 @@ public class Game : GameWindow
 	int VertexArrayObject;
 	int ElementBufferObject;
 
+	Matrix4 translation;
+	Matrix4 scale;
+	Matrix4 rotation;
 	Matrix4 transform;
 
 	Shader shader;
@@ -96,6 +99,8 @@ public class Game : GameWindow
 	Texture texture1;
 
 	Stopwatch timer = new Stopwatch();
+	float time = 0;
+	float deltaTime = 0;
 
 	protected override void OnLoad()
 	{
@@ -106,8 +111,11 @@ public class Game : GameWindow
 		shader = new Shader("shader.vert", "shader.frag");
 		shader.Use();
 
-		transform = Matrix4.CreateRotationX(-0.25f);
-		shader.SetMartix4("transform", ref transform);
+		translation = Matrix4.Identity;
+		scale = Matrix4.Identity;
+		rotation = Matrix4.Identity;
+		transform = Matrix4.Identity;
+		rotation = Matrix4.CreateRotationX(0.25f) * Matrix4.CreateRotationY(0.25f);
 
 		texture0 = new Texture("container.jpg");
         texture1 = new Texture("awesomeface.png");
@@ -151,12 +159,18 @@ public class Game : GameWindow
 	{
 		base.OnUpdateFrame(args);
 
-		transform *= Matrix4.CreateRotationY((float)args.Time);
+		time = (float)timer.Elapsed.TotalSeconds;
+		deltaTime = (float)args.Time;
+
+        translation = Matrix4.CreateTranslation(0, 0.25f * (float)Math.Sin(2 * time), 0);
+		rotation *= Matrix4.CreateRotationY(deltaTime);
+		transform = rotation * scale * translation;
+
 		shader.SetMartix4("transform", ref transform);
 		
 		shader.SetFloat("u_time", (float)timer.Elapsed.TotalSeconds);
 
-		Title = "FPS: " + ((uint)(1f / args.Time)).ToString();
+		Title = "FPS: " + ((uint)(1f / deltaTime)).ToString();
 
 		if (KeyboardState.IsKeyDown(Keys.Escape))
 		{
