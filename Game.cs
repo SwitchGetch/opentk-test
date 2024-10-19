@@ -92,11 +92,15 @@ public class Game : GameWindow
 	Matrix4 translation;
 	Matrix4 scale;
 	Matrix4 rotation;
-	Matrix4 transform;
+	Matrix4 view;
+	Matrix4 projection;
+	Matrix4 mvp;
+
+	Vector3 cameraPosition;
+	Vector3 cameraDirection;
 
 	Shader shader;
-	Texture texture0;
-	Texture texture1;
+	Texture texture;
 
 	Stopwatch timer = new Stopwatch();
 	float time = 0;
@@ -111,20 +115,18 @@ public class Game : GameWindow
 		shader = new Shader("shader.vert", "shader.frag");
 		shader.Use();
 
-		translation = Matrix4.Identity;
+		cameraPosition = Vector3.Zero;
+		cameraDirection = Vector3.UnitZ;
+
+		translation = Matrix4.CreateTranslation(0, 0, 5);
 		scale = Matrix4.Identity;
 		rotation = Matrix4.Identity;
-		transform = Matrix4.Identity;
-		rotation = Matrix4.CreateRotationX(0.25f) * Matrix4.CreateRotationY(0.25f);
+		view = Matrix4.LookAt(cameraPosition, cameraDirection, Vector3.UnitY);
+		projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), ClientSize.X / ClientSize.Y, 0.1f, 100.0f);
+		mvp = Matrix4.Identity;
 
-		texture0 = new Texture("container.jpg");
-        texture1 = new Texture("awesomeface.png");
-
-        texture0.Use();
-        texture1.Use(TextureUnit.Texture1);
-
-        shader.SetInt("texture0", 0);
-        shader.SetInt("texture1", 1);
+		texture = new Texture("dirt.jpg");
+		texture.Use();
 
 
         VertexArrayObject = GL.GenVertexArray();
@@ -162,11 +164,11 @@ public class Game : GameWindow
 		time = (float)timer.Elapsed.TotalSeconds;
 		deltaTime = (float)args.Time;
 
-        translation = Matrix4.CreateTranslation(0, 0.25f * (float)Math.Sin(2 * time), 0);
+		translation = Matrix4.CreateTranslation(0, (float)Math.Sin(time), 5);
 		rotation *= Matrix4.CreateRotationY(deltaTime);
-		transform = rotation * scale * translation;
+        mvp = rotation * scale * translation * view * projection;
 
-		shader.SetMartix4("transform", ref transform);
+		shader.SetMartix4("mvp", ref mvp);
 		
 		shader.SetFloat("u_time", (float)timer.Elapsed.TotalSeconds);
 
