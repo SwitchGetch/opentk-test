@@ -27,40 +27,40 @@ public class Game : GameWindow
     float[] vertices =
 	{
 		// передняя грань
-		-0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
 
 		// задняя грань
-        -0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
 
 		// левая грань
-        -0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
 
 		// правая грань
-         0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
 
 		// нижняя грань
-        -0.5f, -0.5f, -0.5f,   0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,   1.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,   0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,   1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
 
 		// верхняя грань
-        -0.5f,  0.5f, -0.5f,   0.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,   1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,   0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,   1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
     };
 
 	uint[] indices =
@@ -100,11 +100,16 @@ public class Game : GameWindow
 	Vector3 cameraDirection;
 
 	Shader shader;
-	Texture texture;
+	Texture texture0;
+	Texture texture1;
 
-	Stopwatch timer = new Stopwatch();
-	float time = 0;
-	float deltaTime = 0;
+	Stopwatch timer;
+	float time;
+	float deltaTime;
+	float FPS;
+	float seconds;
+	float frames;
+
 
 	protected override void OnLoad()
 	{
@@ -125,8 +130,14 @@ public class Game : GameWindow
 		projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), ClientSize.X / ClientSize.Y, 0.1f, 100.0f);
 		mvp = Matrix4.Identity;
 
-		texture = new Texture("dirt.jpg");
-		texture.Use();
+		texture0 = new Texture("container.jpg");
+		texture1 = new Texture("awesomeface.png");
+
+		texture0.Use(TextureUnit.Texture0);
+		texture1.Use(TextureUnit.Texture1);
+
+		shader.SetInt("texture0", 0);
+		shader.SetInt("texture1", 1);
 
 
         VertexArrayObject = GL.GenVertexArray();
@@ -154,6 +165,7 @@ public class Game : GameWindow
 
         GL.Enable(EnableCap.DepthTest);
 
+		timer = new Stopwatch();
         timer.Start();
 	}
 
@@ -164,16 +176,17 @@ public class Game : GameWindow
 		time = (float)timer.Elapsed.TotalSeconds;
 		deltaTime = (float)args.Time;
 
-		translation = Matrix4.CreateTranslation(0, (float)Math.Sin(time), 5);
-		rotation *= Matrix4.CreateRotationY(deltaTime);
+		CountFPS();
+
+		translation = Matrix4.CreateTranslation((float)Math.Cos(2 * time), (float)Math.Sin(2 * time), 5);
+		rotation *= Matrix4.CreateRotationY(2 * deltaTime);
         mvp = rotation * scale * translation * view * projection;
 
 		shader.SetMartix4("mvp", ref mvp);
 		
 		shader.SetFloat("u_time", (float)timer.Elapsed.TotalSeconds);
 
-		Title = "FPS: " + ((uint)(1f / deltaTime)).ToString();
-
+		Title = "FPS: " + FPS;
 		if (KeyboardState.IsKeyDown(Keys.Escape))
 		{
 			Close();
@@ -205,5 +218,17 @@ public class Game : GameWindow
 		GL.Viewport(0, 0, e.Width, e.Height);
 
 		shader.SetVector2("u_resolution", new Vector2(e.Width, e.Height));
+	}
+
+	private void CountFPS()
+	{
+		frames++;
+
+		if (seconds < (int)time)
+		{
+			seconds = (int)time;
+			FPS = frames;
+			frames = 0;
+		}
 	}
 }
