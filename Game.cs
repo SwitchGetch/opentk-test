@@ -95,6 +95,7 @@ public class Game : GameWindow
 	Matrix4 view;
 	Matrix4 projection;
 	Matrix4 mvp;
+	float transformSpeed = 1;
 
 	Vector3 cameraPosition;
 	Vector3 cameraDirection;
@@ -117,7 +118,7 @@ public class Game : GameWindow
 
 		GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-		shader = new Shader("shader.vert", "shader.frag");
+        shader = new Shader("shader.vert", "shader.frag");
 		shader.Use();
 
 		cameraPosition = Vector3.Zero;
@@ -165,33 +166,29 @@ public class Game : GameWindow
 
         GL.Enable(EnableCap.DepthTest);
 
-		timer = new Stopwatch();
+        timer = new Stopwatch();
         timer.Start();
-	}
+    }
 
 	protected override void OnUpdateFrame(FrameEventArgs args)
 	{
 		base.OnUpdateFrame(args);
 
-		time = (float)timer.Elapsed.TotalSeconds;
-		deltaTime = (float)args.Time;
+		TimeHandler(args.Time);
 
-		CountFPS();
-
-		translation = Matrix4.CreateTranslation((float)Math.Cos(2 * time), (float)Math.Sin(2 * time), 5);
-		rotation *= Matrix4.CreateRotationY(2 * deltaTime);
+        translation = Matrix4.CreateTranslation((float)Math.Cos(time), (float)Math.Sin(time), 5);
+		rotation *= Matrix4.CreateRotationY(transformSpeed * deltaTime);
         mvp = rotation * scale * translation * view * projection;
 
 		shader.SetMartix4("mvp", ref mvp);
 		
 		shader.SetFloat("u_time", (float)timer.Elapsed.TotalSeconds);
 
-		Title = "FPS: " + FPS;
 		if (KeyboardState.IsKeyDown(Keys.Escape))
 		{
 			Close();
 		}
-	}
+    }
 
 	protected override void OnRenderFrame(FrameEventArgs args)
 	{
@@ -220,15 +217,26 @@ public class Game : GameWindow
 		shader.SetVector2("u_resolution", new Vector2(e.Width, e.Height));
 	}
 
-	private void CountFPS()
+    protected override void OnMouseWheel(MouseWheelEventArgs e)
+    {
+        base.OnMouseWheel(e);
+
+		transformSpeed += e.OffsetY;
+    }
+
+    private void TimeHandler(double argsTime)
 	{
-		frames++;
+        time = (float)timer.Elapsed.TotalSeconds;
+        deltaTime = (float)argsTime;
+        frames++;
 
 		if (seconds < (int)time)
 		{
-			seconds = (int)time;
-			FPS = frames;
+			FPS = (int)(frames / (float)(time - seconds));
+            seconds = (int)time;
 			frames = 0;
-		}
+
+            Title = "FPS: " + FPS;
+        }
 	}
 }
