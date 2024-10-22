@@ -5,7 +5,11 @@ class Program
 {
     static void Main(string[] args)
     {
-        GameWindowSettings gameWindowSettings = GameWindowSettings.Default;
+        GameWindowSettings gameWindowSettings = new GameWindowSettings()
+        {
+            
+        };
+
         NativeWindowSettings nativeWindowSettings = new NativeWindowSettings()
         {
             ClientSize = new Vector2i(800, 800),

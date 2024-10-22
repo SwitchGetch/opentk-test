@@ -4,7 +4,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Graphics.OpenGL4;
 using System.Diagnostics;
-using StbImageSharp;
+using OpenTK.Windowing.Common.Input;
 
 public class Game : GameWindow
 {
@@ -92,17 +92,17 @@ public class Game : GameWindow
 	Matrix4 translation;
 	Matrix4 scale;
 	Matrix4 rotation;
+	Matrix4 model;
 	Matrix4 view;
 	Matrix4 projection;
-	Matrix4 mvp;
 	float transformSpeed = 1;
 
-	Vector3 cameraPosition;
-	Vector3 cameraDirection;
+	Camera camera;
 
 	Shader shader;
-	Texture texture0;
-	Texture texture1;
+	Texture texture;
+	//Texture texture0;
+	//Texture texture1;
 
 	Stopwatch timer;
 	float time;
@@ -116,29 +116,36 @@ public class Game : GameWindow
 	{
 		base.OnLoad();
 
-		GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		GL.ClearColor(0.45f, 0.49f, 0.5f, 1.0f);
+
+        CursorState = CursorState.Hidden;
+		MousePosition = ClientSize / 2;
 
         shader = new Shader("shader.vert", "shader.frag");
 		shader.Use();
 
-		cameraPosition = Vector3.Zero;
-		cameraDirection = Vector3.UnitZ;
+		camera = new Camera();
+		camera.RotationSpeed = 0.1f;
 
 		translation = Matrix4.CreateTranslation(0, 0, 5);
 		scale = Matrix4.Identity;
 		rotation = Matrix4.Identity;
-		view = Matrix4.LookAt(cameraPosition, cameraDirection, Vector3.UnitY);
+		model = Matrix4.Identity;
+		view = Matrix4.LookAt(camera.Position, camera.Direction, Vector3.UnitY);
 		projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), ClientSize.X / ClientSize.Y, 0.1f, 100.0f);
-		mvp = Matrix4.Identity;
 
-		texture0 = new Texture("container.jpg");
-		texture1 = new Texture("awesomeface.png");
-
-		texture0.Use(TextureUnit.Texture0);
-		texture1.Use(TextureUnit.Texture1);
-
+		texture = new Texture("box.jpg");
+		texture.Use();
 		shader.SetInt("texture0", 0);
-		shader.SetInt("texture1", 1);
+
+        //texture0 = new Texture("container.jpg");
+		//texture1 = new Texture("awesomeface.png");
+
+		//texture0.Use(TextureUnit.Texture0);
+		//texture1.Use(TextureUnit.Texture1);
+
+		//shader.SetInt("texture0", 0);
+		//shader.SetInt("texture1", 1);
 
 
         VertexArrayObject = GL.GenVertexArray();
@@ -175,12 +182,18 @@ public class Game : GameWindow
 		base.OnUpdateFrame(args);
 
 		TimeHandler(args.Time);
+        MouseHandler();
 
-        translation = Matrix4.CreateTranslation((float)Math.Cos(time), (float)Math.Sin(time), 5);
+		//camera.Direction *= Matrix3.CreateRotationY(transformSpeed * deltaTime);
+
+        //translation = Matrix4.CreateTranslation((float)Math.Cos(time), (float)Math.Sin(time), 5);
 		rotation *= Matrix4.CreateRotationY(transformSpeed * deltaTime);
-        mvp = rotation * scale * translation * view * projection;
+		model = rotation * scale * translation;
+		view = camera.GetViewMatrix();
 
-		shader.SetMartix4("mvp", ref mvp);
+		shader.SetMartix4("model", ref model);
+		shader.SetMartix4("view", ref view);
+		shader.SetMartix4("projection", ref projection);
 		
 		shader.SetFloat("u_time", (float)timer.Elapsed.TotalSeconds);
 
@@ -215,7 +228,7 @@ public class Game : GameWindow
 		GL.Viewport(0, 0, e.Width, e.Height);
 
 		shader.SetVector2("u_resolution", new Vector2(e.Width, e.Height));
-	}
+    }
 
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
@@ -239,4 +252,13 @@ public class Game : GameWindow
             Title = "FPS: " + FPS;
         }
 	}
+
+	private void MouseHandler()
+	{
+        Vector2 d = MousePosition - ClientSize / 2;
+        MousePosition = ClientSize / 2;
+
+		Vector2 angle = deltaTime * camera.RotationSpeed * new Vector2(d.Y, -d.X);
+        camera.Direction *= Matrix3.CreateRotationX(angle.X) * Matrix3.CreateRotationY(angle.Y);
+    }
 }
