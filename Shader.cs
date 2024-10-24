@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 
 public class Shader : IDisposable
 {
-	int Handle;
+	public int Handle { get; private set; }
     int VertexShader;
 	int FragmentShader;
 

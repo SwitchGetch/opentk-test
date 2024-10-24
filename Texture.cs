@@ -3,7 +3,7 @@ using StbImageSharp;
 
 public class Texture
 {
-    int Handle;
+    public int Handle { get; private set; }
 
     public Texture(string path)
     {

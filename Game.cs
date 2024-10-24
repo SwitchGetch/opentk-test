@@ -10,104 +10,24 @@ public class Game : GameWindow
 {
 	public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(gameWindowSettings, nativeWindowSettings) { }
 
-    /*float[] vertices =
-	{
-    //Position          Texture coordinates
-     0.5f,  0.5f, 0.0f, 1.0f, 1.0f, // top right
-     0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
-    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
-    -0.5f,  0.5f, 0.0f, 0.0f, 1.0f  // top left
-	};
-
-    uint[] indices = {
-    0, 1, 3,
-    1, 2, 3
-	};*/
-
-    float[] vertices =
-	{
-		// передняя грань
-		-0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
-
-		// задняя грань
-        -0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
-
-		// левая грань
-        -0.5f, -0.5f,  0.5f,   1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,   1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
-
-		// правая грань
-         0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,   0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
-
-		// нижняя грань
-        -0.5f, -0.5f,  0.5f,   0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,   1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,   0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,   1.0f, 0.0f,
-
-		// верхняя грань
-        -0.5f,  0.5f,  0.5f,   0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,   1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,   0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
-    };
-
-	uint[] indices =
-	{
-		0, 1, 2,
-		1, 2, 3,
-
-		4, 5, 6,
-		5, 6, 7,
-
-		8, 9, 10,
-		9, 10, 11,
-
-		12, 13, 14,
-		13, 14, 15,
-
-		16, 17, 18,
-		17, 18, 19,
-
-		20, 21, 22,
-		21, 22, 23
-	};
-
-
-    int VertexBufferObject;
-	int VertexArrayObject;
-	int ElementBufferObject;
-
-	Matrix4 translation;
-	Matrix4 scale;
-	Matrix4 rotation;
-	Matrix4 model;
 	Matrix4 view;
 	Matrix4 projection;
 	float transformSpeed = 1;
 
-	Camera camera;
-
 	Shader shader;
-	Texture texture;
-	//Texture texture0;
-	//Texture texture1;
+
+	Texture box;
+	Texture container;
+	Texture awesomeface;
+
+	List<Cube> cubes;
+
+	Camera camera;
 
 	Stopwatch timer;
 	float time;
 	float deltaTime;
-	float FPS;
+	float fps;
 	float seconds;
 	float frames;
 
@@ -124,52 +44,27 @@ public class Game : GameWindow
         shader = new Shader("shader.vert", "shader.frag");
 		shader.Use();
 
-		camera = new Camera();
-		camera.RotationSpeed = 0.1f;
+		box = new Texture("box.jpg");
+		container = new Texture("container.jpg");
+		awesomeface = new Texture("awesomeface.png");
 
-		translation = Matrix4.CreateTranslation(0, 0, 5);
-		scale = Matrix4.Identity;
-		rotation = Matrix4.Identity;
-		model = Matrix4.Identity;
+		Cube.shader = shader.Handle;
+
+		cubes = new List<Cube>()
+		{
+			new Cube(box.Handle) { Position = new Vector3(2, 0, 5) },
+			new Cube(container.Handle) { Position = new Vector3(0, 0, 5) },
+			new Cube(awesomeface.Handle) { Position = new Vector3(-2, 0, 5) }
+		};
+
+		camera = new Camera();
+		camera.RotationSpeed = 0.5f;
+		camera.MovingSpeed = 5;
+
 		view = Matrix4.LookAt(camera.Position, camera.Direction, Vector3.UnitY);
 		projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), ClientSize.X / ClientSize.Y, 0.1f, 100.0f);
 
-		texture = new Texture("box.jpg");
-		texture.Use();
-		shader.SetInt("texture0", 0);
-
-        //texture0 = new Texture("container.jpg");
-		//texture1 = new Texture("awesomeface.png");
-
-		//texture0.Use(TextureUnit.Texture0);
-		//texture1.Use(TextureUnit.Texture1);
-
-		//shader.SetInt("texture0", 0);
-		//shader.SetInt("texture1", 1);
-
-
-        VertexArrayObject = GL.GenVertexArray();
-        GL.BindVertexArray(VertexArrayObject);
-
-
-        VertexBufferObject = GL.GenBuffer();
-		GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-		GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
-
-        int positionLocation = shader.GetAttribLocation("aPosition");
-        GL.EnableVertexAttribArray(positionLocation);
-        GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
-
-        int texCoordLocation = shader.GetAttribLocation("aTexCoord");
-        GL.EnableVertexAttribArray(texCoordLocation);
-        GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
-
-        ElementBufferObject = GL.GenBuffer();
-        GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
-        GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
-
-
-        shader.SetVector2("u_resolution", (Vector2)ClientSize);
+		shader.SetVector2("u_resolution", (Vector2)ClientSize);
 
         GL.Enable(EnableCap.DepthTest);
 
@@ -183,24 +78,18 @@ public class Game : GameWindow
 
 		TimeHandler(args.Time);
         MouseHandler();
+		KeyboardHandler();
 
-		//camera.Direction *= Matrix3.CreateRotationY(transformSpeed * deltaTime);
+		cubes[0].Rotation += new Vector3(transformSpeed * deltaTime, 0, 0);
+		cubes[1].Rotation += new Vector3(0, transformSpeed * deltaTime, 0);
+		cubes[2].Rotation += new Vector3(0, 0, transformSpeed * deltaTime);
 
-        //translation = Matrix4.CreateTranslation((float)Math.Cos(time), (float)Math.Sin(time), 5);
-		rotation *= Matrix4.CreateRotationY(transformSpeed * deltaTime);
-		model = rotation * scale * translation;
 		view = camera.GetViewMatrix();
 
-		shader.SetMartix4("model", ref model);
 		shader.SetMartix4("view", ref view);
 		shader.SetMartix4("projection", ref projection);
-		
-		shader.SetFloat("u_time", (float)timer.Elapsed.TotalSeconds);
 
-		if (KeyboardState.IsKeyDown(Keys.Escape))
-		{
-			Close();
-		}
+		shader.SetFloat("u_time", time);
     }
 
 	protected override void OnRenderFrame(FrameEventArgs args)
@@ -209,7 +98,10 @@ public class Game : GameWindow
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+		for (int i = 0; i < cubes.Count; i++)
+		{
+			cubes[i].Render();
+		}
 
 		SwapBuffers();
 	}
@@ -245,11 +137,11 @@ public class Game : GameWindow
 
 		if (seconds < (int)time)
 		{
-			FPS = (int)(frames / (float)(time - seconds));
+			fps = (int)(frames / (float)(time - seconds));
             seconds = (int)time;
 			frames = 0;
 
-            Title = "FPS: " + FPS;
+            Title = "FPS: " + fps;
         }
 	}
 
@@ -258,7 +150,17 @@ public class Game : GameWindow
         Vector2 d = MousePosition - ClientSize / 2;
         MousePosition = ClientSize / 2;
 
+		if (d.X == 0 && d.Y == 0) return;
+
 		Vector2 angle = deltaTime * camera.RotationSpeed * new Vector2(d.Y, -d.X);
         camera.Direction *= Matrix3.CreateRotationX(angle.X) * Matrix3.CreateRotationY(angle.Y);
     }
+
+	private void KeyboardHandler()
+	{
+		if (KeyboardState.IsKeyDown(Keys.Escape))
+		{
+			Close();
+		}
+	}
 }

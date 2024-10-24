@@ -24,7 +24,7 @@ public class Camera
 
     public Matrix4 GetViewMatrix()
     {
-        return Matrix4.LookAt(Vector3.Zero, Direction, Vector3.UnitY);
+        return Matrix4.LookAt(Position, Position + Direction, Vector3.UnitY);
     }
 }
 
