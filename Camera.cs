@@ -7,8 +7,82 @@ using System.Diagnostics;
 
 public class Camera
 {
-    public Vector3 Position;
-    public Vector3 Direction;
+    private static readonly float HalfPi = 1.57f;
+    private static readonly float Pi = 3.14f;
+    private static readonly float TwoPi = 6.28f;
+
+    public static int shader;
+
+    private Vector2 viewport;
+    private float fov;
+
+    public Vector2 Viewport
+    {
+        get => viewport;
+        set { viewport = value; SetProjectionMatrix(); }
+    }
+
+    public float FOV
+    {
+        get => fov;
+        set
+        {
+            fov = value;
+
+            if (fov < 1) fov = 1;
+            else if (fov > 60) fov = 60;
+
+            SetProjectionMatrix();
+        }
+    }
+
+    private Vector3 position;
+
+    public Vector3 Position
+    {
+        get => position;
+        set { position = value; SetViewMatrix(); }
+    }
+
+    public Vector3 Direction { get; private set; }
+
+    public Vector3 Forward { get; private set; }
+
+    private float pitch;
+    private float yaw;
+
+    public float Pitch
+    {
+        get => pitch;
+        set
+        {
+            pitch = value;
+
+            if (pitch < -HalfPi) pitch = -HalfPi;
+            else if (pitch > HalfPi) pitch = HalfPi;
+
+            SetDirection();
+        }
+    }
+
+    public float Yaw
+    {
+        get => yaw;
+        set
+        {
+            yaw = value;
+
+            if (yaw < -Pi) yaw += TwoPi;
+            else if (yaw > Pi) yaw -= TwoPi;
+
+            Forward = Vector3.UnitZ * Matrix3.CreateRotationY(yaw);
+
+            SetDirection();
+        }
+    }
+
+    private Matrix4 view;
+    private Matrix4 projection;
 
     public float MovingSpeed;
     public float RotationSpeed;
@@ -18,13 +92,45 @@ public class Camera
         Position = Vector3.Zero;
         Direction = Vector3.UnitZ;
 
+        FOV = MathHelper.DegreesToRadians(45.0f);
+
+        Yaw = 0;
+        Pitch = 0;
+
         MovingSpeed = 1;
         RotationSpeed = 1;
     }
 
-    public Matrix4 GetViewMatrix()
+    public void LookAt(Vector3 Target)
     {
-        return Matrix4.LookAt(Position, Position + Direction, Vector3.UnitY);
+        if (Target == Position) return;
+
+        Direction = Vector3.Normalize(Target - Position);
+
+        // рассчитать углы
+
+        SetViewMatrix();
+    }
+
+    private void SetDirection()
+    {
+        Direction = Vector3.UnitZ * Matrix3.CreateRotationX(pitch) * Matrix3.CreateRotationY(yaw);
+
+        SetViewMatrix();
+    }
+
+    private void SetViewMatrix()
+    {
+        view = Matrix4.LookAt(Position, Position + Direction, Vector3.UnitY);
+
+        GL.UniformMatrix4(GL.GetUniformLocation(shader, "view"), true, ref view);
+    }
+
+    private void SetProjectionMatrix()
+    {
+        projection = Matrix4.CreatePerspectiveFieldOfView(FOV, viewport.X / viewport.Y, 0.1f, 100.0f);
+
+        GL.UniformMatrix4(GL.GetUniformLocation(shader, "projection"), true, ref projection);
     }
 }
 

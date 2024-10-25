@@ -1,18 +1,16 @@
 ﻿using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
 
 class Program
 {
     static void Main(string[] args)
     {
-        GameWindowSettings gameWindowSettings = new GameWindowSettings()
-        {
-            
-        };
+        GameWindowSettings gameWindowSettings = GameWindowSettings.Default;
 
         NativeWindowSettings nativeWindowSettings = new NativeWindowSettings()
         {
-            ClientSize = new Vector2i(800, 800),
+            ClientSize = new Vector2i(1600, 900),
             Title = "test"
         };
 

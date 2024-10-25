@@ -10,8 +10,8 @@ public class Game : GameWindow
 {
 	public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(gameWindowSettings, nativeWindowSettings) { }
 
-	Matrix4 view;
-	Matrix4 projection;
+	public Vector2 WindowSize { get => ClientSize; }
+
 	float transformSpeed = 1;
 
 	Shader shader;
@@ -24,7 +24,6 @@ public class Game : GameWindow
 
 	Camera camera;
 
-	Stopwatch timer;
 	float time;
 	float deltaTime;
 	float fps;
@@ -38,8 +37,7 @@ public class Game : GameWindow
 
 		GL.ClearColor(0.45f, 0.49f, 0.5f, 1.0f);
 
-        CursorState = CursorState.Hidden;
-		MousePosition = ClientSize / 2;
+        CursorState = CursorState.Grabbed;
 
         shader = new Shader("shader.vert", "shader.frag");
 		shader.Use();
@@ -54,22 +52,24 @@ public class Game : GameWindow
 		{
 			new Cube(box.Handle) { Position = new Vector3(2, 0, 5) },
 			new Cube(container.Handle) { Position = new Vector3(0, 0, 5) },
-			new Cube(awesomeface.Handle) { Position = new Vector3(-2, 0, 5) }
-		};
+			new Cube(awesomeface.Handle) { Position = new Vector3(-2, 0, 5) },
+        };
 
-		camera = new Camera();
-		camera.RotationSpeed = 0.5f;
+		Camera.shader = shader.Handle;
+        camera = new Camera();
+		camera.Viewport = ClientSize;
+		camera.RotationSpeed = 0.001f;
 		camera.MovingSpeed = 5;
-
-		view = Matrix4.LookAt(camera.Position, camera.Direction, Vector3.UnitY);
-		projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), ClientSize.X / ClientSize.Y, 0.1f, 100.0f);
 
 		shader.SetVector2("u_resolution", (Vector2)ClientSize);
 
         GL.Enable(EnableCap.DepthTest);
 
-        timer = new Stopwatch();
-        timer.Start();
+		time = 0;
+		deltaTime = 0;
+		fps = 0;
+		seconds = 0;
+		frames = 0;
     }
 
 	protected override void OnUpdateFrame(FrameEventArgs args)
@@ -80,14 +80,15 @@ public class Game : GameWindow
         MouseHandler();
 		KeyboardHandler();
 
-		cubes[0].Rotation += new Vector3(transformSpeed * deltaTime, 0, 0);
-		cubes[1].Rotation += new Vector3(0, transformSpeed * deltaTime, 0);
-		cubes[2].Rotation += new Vector3(0, 0, transformSpeed * deltaTime);
-
-		view = camera.GetViewMatrix();
-
-		shader.SetMartix4("view", ref view);
-		shader.SetMartix4("projection", ref projection);
+		for (int i = 0; i < cubes.Count; i++)
+		{
+			switch (i % 3)
+			{
+				case 0: cubes[i].Rotation.X += transformSpeed * deltaTime; break;
+				case 1: cubes[i].Rotation.Y += transformSpeed * deltaTime; break;
+				case 2: cubes[i].Rotation.Z += transformSpeed * deltaTime; break;
+            }
+		}
 
 		shader.SetFloat("u_time", time);
     }
@@ -98,12 +99,9 @@ public class Game : GameWindow
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-		for (int i = 0; i < cubes.Count; i++)
-		{
-			cubes[i].Render();
-		}
+		for (int i = 0; i < cubes.Count; i++) cubes[i].Render();
 
-		SwapBuffers();
+        SwapBuffers();
 	}
 
 	protected override void OnUnload()
@@ -119,7 +117,9 @@ public class Game : GameWindow
 
 		GL.Viewport(0, 0, e.Width, e.Height);
 
-		shader.SetVector2("u_resolution", new Vector2(e.Width, e.Height));
+		camera.Viewport = ClientSize;
+
+		shader.SetVector2("u_resolution", ClientSize);
     }
 
     protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -131,8 +131,8 @@ public class Game : GameWindow
 
     private void TimeHandler(double argsTime)
 	{
-        time = (float)timer.Elapsed.TotalSeconds;
         deltaTime = (float)argsTime;
+		time += deltaTime;
         frames++;
 
 		if (seconds < (int)time)
@@ -147,20 +147,31 @@ public class Game : GameWindow
 
 	private void MouseHandler()
 	{
-        Vector2 d = MousePosition - ClientSize / 2;
-        MousePosition = ClientSize / 2;
+		Vector2 d = MouseState.Delta;
 
 		if (d.X == 0 && d.Y == 0) return;
 
-		Vector2 angle = deltaTime * camera.RotationSpeed * new Vector2(d.Y, -d.X);
-        camera.Direction *= Matrix3.CreateRotationX(angle.X) * Matrix3.CreateRotationY(angle.Y);
+        camera.Pitch += camera.RotationSpeed * d.Y;
+		camera.Yaw += camera.RotationSpeed * -d.X;
     }
 
 	private void KeyboardHandler()
 	{
-		if (KeyboardState.IsKeyDown(Keys.Escape))
+		KeyboardState input = KeyboardState;
+
+		if (input.IsKeyDown(Keys.Escape)) Close();
+
+		Vector3 d = new Vector3();
+		if (input.IsKeyDown(Keys.W)) d += camera.Forward;
+		if (input.IsKeyDown(Keys.S)) d -= camera.Forward;
+		if (input.IsKeyDown(Keys.A)) d += new Vector3(camera.Forward.Z, 0, -camera.Forward.X);
+		if (input.IsKeyDown(Keys.D)) d -= new Vector3(camera.Forward.Z, 0, -camera.Forward.X);
+		if (input.IsKeyDown(Keys.Space)) d += Vector3.UnitY;
+		if (input.IsKeyDown(Keys.LeftShift)) d -= Vector3.UnitY;
+
+		if (d != Vector3.Zero)
 		{
-			Close();
+			camera.Position += deltaTime * camera.MovingSpeed * Vector3.Normalize(d);
 		}
 	}
 }
