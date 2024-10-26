@@ -96,34 +96,31 @@ public class Cube
 		GL.BindVertexArray(0);
 	}
 
-	public Vector3 Position;
-	public Vector3 Rotation;
-	public Vector3 Scale;
+    protected Vector3 position;
+    protected Vector3 rotation;
+    protected Vector3 scale;
 
-	private Matrix4 model;
+    public Vector3 Position { get => position; set { position = value; SetModelMatrix(); } }
+	public Vector3 Rotation { get => rotation; set { rotation = value; SetModelMatrix(); } }
+    public Vector3 Scale { get => scale; set { scale = value; SetModelMatrix(); } }
+
+    private Matrix4 model;
 
 	public int texture;
 
-	public Cube(int texture = 0)
+	public Cube()
 	{
-		Position = Vector3.Zero;
-		Rotation = Vector3.Zero;
-		Scale = Vector3.One;
+		position = Vector3.Zero;
+		rotation = Vector3.Zero;
+		scale = Vector3.One;
 
 		model = Matrix4.Identity;
 
-		this.texture = texture;
+		texture = 0;
 	}
 
 	public void Render()
 	{
-		model =
-			Matrix4.CreateRotationX(Rotation.X) *
-			Matrix4.CreateRotationY(Rotation.Y) *
-			Matrix4.CreateRotationZ(Rotation.Z) *
-			Matrix4.CreateScale(Scale) *
-			Matrix4.CreateTranslation(Position);
-
 		GL.UniformMatrix4(GL.GetUniformLocation(shader, "model"), true, ref model);
 
 		GL.BindVertexArray(VertexArrayObject);
@@ -134,4 +131,14 @@ public class Cube
 		GL.BindVertexArray(0);
 		GL.BindTexture(TextureTarget.Texture2D, 0);
 	}
+
+	private void SetModelMatrix()
+	{
+        model =
+		Matrix4.CreateRotationX(Rotation.X) *
+		Matrix4.CreateRotationY(Rotation.Y) *
+		Matrix4.CreateRotationZ(Rotation.Z) *
+		Matrix4.CreateScale(Scale) *
+		Matrix4.CreateTranslation(Position);
+    }
 }

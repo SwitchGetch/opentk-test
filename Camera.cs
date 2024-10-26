@@ -29,8 +29,11 @@ public class Camera
         {
             fov = value;
 
-            if (fov < 1) fov = 1;
-            else if (fov > 60) fov = 60;
+            float min = MathHelper.DegreesToRadians(30.0f);
+            float max = MathHelper.DegreesToRadians(90.0f);
+
+            if (fov < min) fov = min;
+            else if (fov > max) fov = max;
 
             SetProjectionMatrix();
         }

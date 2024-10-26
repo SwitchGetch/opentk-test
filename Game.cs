@@ -12,14 +12,12 @@ public class Game : GameWindow
 
 	public Vector2 WindowSize { get => ClientSize; }
 
-	float transformSpeed = 1;
-
 	Shader shader;
 
 	Texture box;
-	Texture container;
-	Texture awesomeface;
+	Texture stone;
 
+	Player player;
 	List<Cube> cubes;
 
 	Camera camera;
@@ -37,27 +35,42 @@ public class Game : GameWindow
 
 		GL.ClearColor(0.45f, 0.49f, 0.5f, 1.0f);
 
-        CursorState = CursorState.Grabbed;
+        CursorState = CursorState.Grabbed;	
 
         shader = new Shader("shader.vert", "shader.frag");
 		shader.Use();
 
 		box = new Texture("box.jpg");
-		container = new Texture("container.jpg");
-		awesomeface = new Texture("awesomeface.png");
+		stone = new Texture("stone.jpg");
+
+		player = new Player { Position = new Vector3(0, 1, 0), Scale = new Vector3(0.5f, 1, 0.5f) };
 
 		Cube.shader = shader.Handle;
 
 		cubes = new List<Cube>()
 		{
-			new Cube(box.Handle) { Position = new Vector3(2, 0, 5) },
-			new Cube(container.Handle) { Position = new Vector3(0, 0, 5) },
-			new Cube(awesomeface.Handle) { Position = new Vector3(-2, 0, 5) },
+			new Cube { texture = stone.Handle, Position = new Vector3(0, -1, 0), Scale = new Vector3(10, 1, 10) },
         };
+
+		for (int i = 0; i < 16; i++)
+		{
+			Vector3 position = new Vector3();
+
+			switch (i % 4)
+			{
+				case 0: position = new Vector3(2, i, 2); break;
+				case 1: position = new Vector3(2, i, -2); break;
+				case 2: position = new Vector3(-2, i, -2); break;
+				case 3: position = new Vector3(-2, i, 2); break;
+			}
+
+			cubes.Add(new Cube { texture = box.Handle, Position = position });
+		}
 
 		Camera.shader = shader.Handle;
         camera = new Camera();
 		camera.Viewport = ClientSize;
+		camera.FOV = MathHelper.DegreesToRadians(60.0f);
 		camera.RotationSpeed = 0.001f;
 		camera.MovingSpeed = 5;
 
@@ -80,15 +93,7 @@ public class Game : GameWindow
         MouseHandler();
 		KeyboardHandler();
 
-		for (int i = 0; i < cubes.Count; i++)
-		{
-			switch (i % 3)
-			{
-				case 0: cubes[i].Rotation.X += transformSpeed * deltaTime; break;
-				case 1: cubes[i].Rotation.Y += transformSpeed * deltaTime; break;
-				case 2: cubes[i].Rotation.Z += transformSpeed * deltaTime; break;
-            }
-		}
+		UpdatePlayer();
 
 		shader.SetFloat("u_time", time);
     }
@@ -98,6 +103,8 @@ public class Game : GameWindow
 		base.OnRenderFrame(args);
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+		//player.Render();
 
 		for (int i = 0; i < cubes.Count; i++) cubes[i].Render();
 
@@ -126,7 +133,7 @@ public class Game : GameWindow
     {
         base.OnMouseWheel(e);
 
-		transformSpeed += e.OffsetY;
+		camera.FOV -= 0.05f * e.OffsetY;
     }
 
     private void TimeHandler(double argsTime)
@@ -157,21 +164,82 @@ public class Game : GameWindow
 
 	private void KeyboardHandler()
 	{
-		KeyboardState input = KeyboardState;
+		if (KeyboardState.IsKeyDown(Keys.Escape)) Close();
 
-		if (input.IsKeyDown(Keys.Escape)) Close();
+		/*Vector3 d = new Vector3();
+		if (KeyboardState.IsKeyDown(Keys.W)) d += camera.Forward;
+		if (KeyboardState.IsKeyDown(Keys.S)) d -= camera.Forward;
+		if (KeyboardState.IsKeyDown(Keys.A)) d += new Vector3(camera.Forward.Z, 0, -camera.Forward.X);
+		if (KeyboardState.IsKeyDown(Keys.D)) d -= new Vector3(camera.Forward.Z, 0, -camera.Forward.X);
+        if (KeyboardState.IsKeyDown(Keys.Space)) d += Vector3.UnitY;
+        if (KeyboardState.IsKeyDown(Keys.LeftShift)) d -= Vector3.UnitY;
 
-		Vector3 d = new Vector3();
-		if (input.IsKeyDown(Keys.W)) d += camera.Forward;
-		if (input.IsKeyDown(Keys.S)) d -= camera.Forward;
-		if (input.IsKeyDown(Keys.A)) d += new Vector3(camera.Forward.Z, 0, -camera.Forward.X);
-		if (input.IsKeyDown(Keys.D)) d -= new Vector3(camera.Forward.Z, 0, -camera.Forward.X);
-		if (input.IsKeyDown(Keys.Space)) d += Vector3.UnitY;
-		if (input.IsKeyDown(Keys.LeftShift)) d -= Vector3.UnitY;
-
-		if (d != Vector3.Zero)
+        if (d != Vector3.Zero)
 		{
 			camera.Position += deltaTime * camera.MovingSpeed * Vector3.Normalize(d);
-		}
+		}*/
 	}
+
+	private void UpdatePlayer()
+	{
+		player.Speed += deltaTime * player.Acceleration;
+		player.Position += deltaTime * player.Speed;
+
+        Vector3 d = new Vector3();
+        if (KeyboardState.IsKeyDown(Keys.W)) d += camera.Forward;
+        if (KeyboardState.IsKeyDown(Keys.S)) d -= camera.Forward;
+        if (KeyboardState.IsKeyDown(Keys.A)) d += new Vector3(camera.Forward.Z, 0, -camera.Forward.X);
+        if (KeyboardState.IsKeyDown(Keys.D)) d -= new Vector3(camera.Forward.Z, 0, -camera.Forward.X);
+
+        if (d != Vector3.Zero)
+        {
+            player.Position += deltaTime * camera.MovingSpeed * Vector3.Normalize(d);
+        }
+
+		bool collision = false;
+
+		for (int i = 0; i < cubes.Count; i++)
+		{
+			Vector3 playerMin = player.Position - 0.5f * player.Scale;
+			Vector3 playerMax = player.Position + 0.5f * player.Scale;
+			Vector3 cubeMin = cubes[i].Position - 0.5f * cubes[i].Scale;
+			Vector3 cubeMax = cubes[i].Position + 0.5f * cubes[i].Scale;
+
+			Vector3 min = new Vector3(Math.Min(playerMin.X, cubeMin.X), Math.Min(playerMin.Y, cubeMin.Y), Math.Min(playerMin.Z, cubeMin.Z));
+			Vector3 max = new Vector3(Math.Max(playerMax.X, cubeMax.X), Math.Max(playerMax.Y, cubeMax.Y), Math.Max(playerMax.Z, cubeMax.Z));
+
+			Vector3 common = player.Scale + cubes[i].Scale + min - max;
+
+			if (common.X >= 0 && common.Y >= 0 && common.Z >= 0)
+			{
+				d = new Vector3();
+
+				if (common.X <= common.Y && common.X <= common.Z)
+				{
+                    d.X = common.X * (playerMin.X == min.X ? -1 : 1);
+					player.Speed.X = 0;
+                }
+
+				if (common.Y <= common.X && common.Y <= common.Z)
+				{
+                    d.Y = common.Y * (playerMin.Y == min.Y ? -1 : 1);
+                    player.Speed.Y = 0;
+                }
+
+				if (common.Z <= common.X && common.Z <= common.Y)
+				{
+                    d.Z = common.Z * (playerMin.Z == min.Z ? -1 : 1);
+                    player.Speed.Z = 0;
+                }
+
+				player.Position += d;
+
+                collision = true;
+            }
+		}
+
+        if (collision && KeyboardState.IsKeyDown(Keys.Space)) player.Speed.Y = 5;
+
+        camera.Position = player.Position + 0.25f * player.Scale.Y * Vector3.UnitY;
+    }
 }
