@@ -3,8 +3,6 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Graphics.OpenGL4;
-using System.Diagnostics;
-using OpenTK.Windowing.Common.Input;
 
 public class Game : GameWindow
 {
@@ -33,7 +31,7 @@ public class Game : GameWindow
 	{
 		base.OnLoad();
 
-		GL.ClearColor(0.45f, 0.49f, 0.5f, 1.0f);
+		GL.ClearColor(0.27f, 0.28f, 0.3f, 1.0f);
 
         CursorState = CursorState.Grabbed;	
 
@@ -43,36 +41,35 @@ public class Game : GameWindow
 		box = new Texture("box.jpg");
 		stone = new Texture("stone.jpg");
 
-		player = new Player { Position = new Vector3(0, 1, 0), Scale = new Vector3(0.5f, 1, 0.5f) };
+		player = new Player();
+		player.Position = new Vector3(0, 2, 0);
+		player.Scale = new Vector3(0.5f, 1, 0.5f);
+		player.MovingSpeed = 2.5f;
+		player.RotationSpeed = 0.001f;
+		player.JumpingSpeed = 7.5f;
 
 		Cube.shader = shader.Handle;
 
 		cubes = new List<Cube>()
 		{
-			new Cube { texture = stone.Handle, Position = new Vector3(0, -1, 0), Scale = new Vector3(10, 1, 10) },
+			new Cube { texture = stone.Handle, Position = new Vector3(0, -0.5f, 0), Scale = new Vector3(20, 1, 20) },
         };
 
-		for (int i = 0; i < 16; i++)
+		for (int x = 0; x < 5; x++)
 		{
-			Vector3 position = new Vector3();
-
-			switch (i % 4)
+			for (int y = 0; y < 1; y++)
 			{
-				case 0: position = new Vector3(2, i, 2); break;
-				case 1: position = new Vector3(2, i, -2); break;
-				case 2: position = new Vector3(-2, i, -2); break;
-				case 3: position = new Vector3(-2, i, 2); break;
+				for (int z = 0; z < 5; z++)
+				{
+					cubes.Add(new Cube { texture = box.Handle, Position = new Vector3(4 * x - 8, 4 * y + 0.5f, 4 * z - 8)});
+				}
 			}
-
-			cubes.Add(new Cube { texture = box.Handle, Position = position });
 		}
 
 		Camera.shader = shader.Handle;
         camera = new Camera();
 		camera.Viewport = ClientSize;
 		camera.FOV = MathHelper.DegreesToRadians(60.0f);
-		camera.RotationSpeed = 0.001f;
-		camera.MovingSpeed = 5;
 
 		shader.SetVector2("u_resolution", (Vector2)ClientSize);
 
@@ -92,6 +89,11 @@ public class Game : GameWindow
 		TimeHandler(args.Time);
         MouseHandler();
 		KeyboardHandler();
+
+		/*for (int i = 0; i < cubes.Count; i++)
+		{
+			cubes[i].Position *= Matrix3.CreateRotationY(deltaTime);
+		}*/
 
 		UpdatePlayer();
 
@@ -158,8 +160,8 @@ public class Game : GameWindow
 
 		if (d.X == 0 && d.Y == 0) return;
 
-        camera.Pitch += camera.RotationSpeed * d.Y;
-		camera.Yaw += camera.RotationSpeed * -d.X;
+        camera.Pitch += player.RotationSpeed * d.Y;
+		camera.Yaw += player.RotationSpeed * -d.X;
     }
 
 	private void KeyboardHandler()
@@ -193,7 +195,7 @@ public class Game : GameWindow
 
         if (d != Vector3.Zero)
         {
-            player.Position += deltaTime * camera.MovingSpeed * Vector3.Normalize(d);
+            player.Position += deltaTime * player.MovingSpeed * Vector3.Normalize(d);
         }
 
 		bool collision = false;
@@ -238,7 +240,7 @@ public class Game : GameWindow
             }
 		}
 
-        if (collision && KeyboardState.IsKeyDown(Keys.Space)) player.Speed.Y = 5;
+        if (collision && KeyboardState.IsKeyDown(Keys.Space)) player.Speed.Y = player.JumpingSpeed;
 
         camera.Position = player.Position + 0.25f * player.Scale.Y * Vector3.UnitY;
     }

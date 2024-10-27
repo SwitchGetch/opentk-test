@@ -1,10 +1,5 @@
-﻿using OpenTK.Windowing.Desktop;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.GraphicsLibraryFramework;
+﻿using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
-using System.Diagnostics;
-using OpenTK.Windowing.Common.Input;
 
 public class Cube
 {

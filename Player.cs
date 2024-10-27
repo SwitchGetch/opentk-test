@@ -1,19 +1,21 @@
-﻿using OpenTK.Windowing.Desktop;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using OpenTK.Graphics.OpenGL4;
-using System.Diagnostics;
-using OpenTK.Windowing.Common.Input;
+﻿using OpenTK.Mathematics;
 
 public class Player : Cube
 {
     public Vector3 Speed;
     public Vector3 Acceleration;
 
-    public Player()
+	public float MovingSpeed;
+    public float JumpingSpeed;
+	public float RotationSpeed;
+
+	public Player()
     {
         Speed = Vector3.Zero;
         Acceleration = -10 * Vector3.UnitY;
+
+        MovingSpeed = 1;
+        JumpingSpeed = 1;
+        RotationSpeed = 1;
     }
 }

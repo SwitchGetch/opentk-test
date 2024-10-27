@@ -1,9 +1,5 @@
-﻿using OpenTK.Windowing.Desktop;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.GraphicsLibraryFramework;
+﻿using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
-using System.Diagnostics;
 
 public class Camera
 {
@@ -87,9 +83,6 @@ public class Camera
     private Matrix4 view;
     private Matrix4 projection;
 
-    public float MovingSpeed;
-    public float RotationSpeed;
-
     public Camera()
     {
         Position = Vector3.Zero;
@@ -99,9 +92,6 @@ public class Camera
 
         Yaw = 0;
         Pitch = 0;
-
-        MovingSpeed = 1;
-        RotationSpeed = 1;
     }
 
     public void LookAt(Vector3 Target)
