@@ -7,7 +7,7 @@ public class Camera
     private static readonly float Pi = 3.14f;
     private static readonly float TwoPi = 6.28f;
 
-    public static int shader;
+    public int shader;
 
     private Vector2 viewport;
     private float fov;
@@ -83,8 +83,10 @@ public class Camera
     private Matrix4 view;
     private Matrix4 projection;
 
-    public Camera()
+    public Camera(int shader)
     {
+        this.shader = shader;
+
         Position = Vector3.Zero;
         Direction = Vector3.UnitZ;
 
@@ -116,15 +118,23 @@ public class Camera
     {
         view = Matrix4.LookAt(Position, Position + Direction, Vector3.UnitY);
 
+        GL.UseProgram(shader);
+
         GL.UniformMatrix4(GL.GetUniformLocation(shader, "view"), true, ref view);
+
+        GL.UseProgram(0);
     }
 
     private void SetProjectionMatrix()
     {
         projection = Matrix4.CreatePerspectiveFieldOfView(FOV, viewport.X / viewport.Y, 0.1f, 100.0f);
 
-        GL.UniformMatrix4(GL.GetUniformLocation(shader, "projection"), true, ref projection);
-    }
+		GL.UseProgram(shader);
+
+		GL.UniformMatrix4(GL.GetUniformLocation(shader, "projection"), true, ref projection);
+
+		GL.UseProgram(0);
+	}
 }
 
 //public class Camera

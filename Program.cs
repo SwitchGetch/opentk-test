@@ -12,6 +12,7 @@ class Program
         {
             //ClientSize = new Vector2i(1600, 900),
             WindowState = WindowState.Fullscreen,
+            Vsync = VSyncMode.On,
             Title = "test"
         };
 

@@ -10,13 +10,18 @@ public class Game : GameWindow
 
 	public Vector2 WindowSize { get => ClientSize; }
 
+	Color4 background;
+
 	Shader shader;
+	Shader shader2D;
 
 	Texture box;
 	Texture stone;
+	Texture awesomeface;
 
 	Player player;
 	List<Cube> cubes;
+	Square crosshair;
 
 	Camera camera;
 
@@ -31,28 +36,28 @@ public class Game : GameWindow
 	{
 		base.OnLoad();
 
-		GL.ClearColor(0.27f, 0.28f, 0.3f, 1.0f);
+		background = new Color4(0.27f, 0.28f, 0.3f, 1.0f);
+
+		GL.ClearColor(background);
 
         CursorState = CursorState.Grabbed;	
 
         shader = new Shader("shader.vert", "shader.frag");
-		shader.Use();
 
 		box = new Texture("box.jpg");
 		stone = new Texture("stone.jpg");
+		awesomeface = new Texture("awesomeface.png");
 
 		player = new Player();
-		player.Position = new Vector3(0, 2, 0);
+		player.Position = new Vector3(0, 5, 0);
 		player.Scale = new Vector3(0.5f, 1, 0.5f);
-		player.MovingSpeed = 2.5f;
+		player.MovingSpeed = 5;
 		player.RotationSpeed = 0.001f;
-		player.JumpingSpeed = 7.5f;
-
-		Cube.shader = shader.Handle;
+		player.JumpingSpeed = 5;
 
 		cubes = new List<Cube>()
 		{
-			new Cube { texture = stone.Handle, Position = new Vector3(0, -0.5f, 0), Scale = new Vector3(20, 1, 20) },
+			new Cube(shader.Handle, stone.Handle) { Position = new Vector3(0, -0.5f, 0), Scale = new Vector3(20, 1, 20) },
         };
 
 		for (int x = 0; x < 5; x++)
@@ -61,19 +66,22 @@ public class Game : GameWindow
 			{
 				for (int z = 0; z < 5; z++)
 				{
-					cubes.Add(new Cube { texture = box.Handle, Position = new Vector3(4 * x - 8, 4 * y + 0.5f, 4 * z - 8)});
+					cubes.Add(new Cube(shader.Handle, box.Handle) {
+						Position = new Vector3(4 * x - 8, 4 * y + 1, 4 * z - 8),
+						Scale = new Vector3(2, 2, 2)});
 				}
 			}
 		}
 
-		Camera.shader = shader.Handle;
-        camera = new Camera();
+        camera = new Camera(shader.Handle);
 		camera.Viewport = ClientSize;
 		camera.FOV = MathHelper.DegreesToRadians(60.0f);
 
-		shader.SetVector2("u_resolution", (Vector2)ClientSize);
+		shader2D = new Shader("shader2D.vert", "shader2D.frag");
+		crosshair = new Square(shader2D.Handle, awesomeface.Handle);
+		crosshair.Scale = 0.00005f * (Vector2)ClientSize.Yx;
 
-        GL.Enable(EnableCap.DepthTest);
+		shader.SetVector2("u_resolution", (Vector2)ClientSize);
 
 		time = 0;
 		deltaTime = 0;
@@ -97,20 +105,20 @@ public class Game : GameWindow
 
 		UpdatePlayer();
 
-		shader.SetFloat("u_time", time);
+		crosshair.Rotation += 10 * deltaTime;
     }
 
 	protected override void OnRenderFrame(FrameEventArgs args)
 	{
 		base.OnRenderFrame(args);
 
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-		//player.Render();
+		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
 		for (int i = 0; i < cubes.Count; i++) cubes[i].Render();
 
-        SwapBuffers();
+		crosshair.Render();
+
+		SwapBuffers();
 	}
 
 	protected override void OnUnload()
@@ -143,6 +151,8 @@ public class Game : GameWindow
         deltaTime = (float)argsTime;
 		time += deltaTime;
         frames++;
+
+		shader.SetFloat("u_time", time);
 
 		if (seconds < (int)time)
 		{
