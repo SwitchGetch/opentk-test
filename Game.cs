@@ -60,14 +60,14 @@ public class Game : GameWindow
 			new Cube(shader.Handle, stone.Handle) { Position = new Vector3(0, -0.5f, 0), Scale = new Vector3(20, 1, 20) },
         };
 
-		for (int x = 0; x < 5; x++)
+		for (int x = -8; x <= 8; x += 4)
 		{
-			for (int y = 0; y < 1; y++)
+			for (int y = 1; y <= 1; y += 1)
 			{
-				for (int z = 0; z < 5; z++)
+				for (int z = -8; z <= 8; z += 4)
 				{
 					cubes.Add(new Cube(shader.Handle, box.Handle) {
-						Position = new Vector3(4 * x - 8, 4 * y + 1, 4 * z - 8),
+						Position = new Vector3(x, y, z),
 						Scale = new Vector3(2, 2, 2)});
 				}
 			}
@@ -246,8 +246,6 @@ public class Game : GameWindow
 				{
                     d.Y = common.Y * (playerMin.Y == min.Y ? -1 : 1);
                     player.Speed.Y = 0;
-
-                    player.Position *= Matrix3.CreateRotationY(deltaTime);
                 }
 
 				if (common.Z <= common.X && common.Z <= common.Y)
