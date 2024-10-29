@@ -124,9 +124,7 @@ public class Cube
 
 		GL.UniformMatrix4(GL.GetUniformLocation(shader, "model"), true, ref model);
 
-		GL.Enable(EnableCap.DepthTest);
 		GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
-		GL.Disable(EnableCap.DepthTest);
 
 		GL.BindVertexArray(0);
 		GL.BindTexture(TextureTarget.Texture2D, 0);

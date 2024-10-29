@@ -13,17 +13,17 @@ public class Game : GameWindow
 	Color4 background;
 
 	Shader shader;
-	Shader shader2D;
 
 	Texture box;
 	Texture stone;
-	Texture awesomeface;
+	Texture cross;
 
 	Player player;
 	List<Cube> cubes;
 	Square crosshair;
 
 	Camera camera;
+	Camera camera2D;
 
 	float time;
 	float deltaTime;
@@ -46,7 +46,7 @@ public class Game : GameWindow
 
 		box = new Texture("box.jpg");
 		stone = new Texture("stone.jpg");
-		awesomeface = new Texture("awesomeface.png");
+		cross = new Texture("crosshair.png");
 
 		player = new Player();
 		player.Position = new Vector3(0, 5, 0);
@@ -77,13 +77,21 @@ public class Game : GameWindow
 		camera.Viewport = ClientSize;
 		camera.FOV = MathHelper.DegreesToRadians(60.0f);
 
-		shader2D = new Shader("shader2D.vert", "shader2D.frag");
-		crosshair = new Square(shader2D.Handle, awesomeface.Handle);
-		crosshair.Scale = 0.00005f * (Vector2)ClientSize.Yx;
+		camera2D = new Camera(shader.Handle, false);
+		camera2D.Viewport = ClientSize;
+		camera2D.LookAt(-Vector3.UnitZ);
+
+        crosshair = new Square(shader.Handle, cross.Handle);
+		crosshair.Position = new Vector3(0, 0, -1);
+		crosshair.Scale = 50 * Vector2.One;
 
 		shader.SetVector2("u_resolution", (Vector2)ClientSize);
 
-		time = 0;
+        GL.Enable(EnableCap.DepthTest);
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+        time = 0;
 		deltaTime = 0;
 		fps = 0;
 		seconds = 0;
@@ -98,14 +106,13 @@ public class Game : GameWindow
         MouseHandler();
 		KeyboardHandler();
 
-		/*for (int i = 0; i < cubes.Count; i++)
+		/*for (int i = 1; i < cubes.Count; i++)
 		{
 			cubes[i].Position *= Matrix3.CreateRotationY(deltaTime);
+			cubes[i].Position = new Vector3(cubes[i].Position.X, (float)Math.Sin(time) + 2, cubes[i].Position.Z);
 		}*/
 
 		UpdatePlayer();
-
-		crosshair.Rotation += 10 * deltaTime;
     }
 
 	protected override void OnRenderFrame(FrameEventArgs args)
@@ -114,8 +121,10 @@ public class Game : GameWindow
 
 		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
+		camera.Use();
 		for (int i = 0; i < cubes.Count; i++) cubes[i].Render();
 
+		camera2D.Use();
 		crosshair.Render();
 
 		SwapBuffers();
@@ -135,6 +144,7 @@ public class Game : GameWindow
 		GL.Viewport(0, 0, e.Width, e.Height);
 
 		camera.Viewport = ClientSize;
+		camera2D.Viewport = ClientSize;
 
 		shader.SetVector2("u_resolution", ClientSize);
     }
@@ -236,6 +246,8 @@ public class Game : GameWindow
 				{
                     d.Y = common.Y * (playerMin.Y == min.Y ? -1 : 1);
                     player.Speed.Y = 0;
+
+                    player.Position *= Matrix3.CreateRotationY(deltaTime);
                 }
 
 				if (common.Z <= common.X && common.Z <= common.Y)

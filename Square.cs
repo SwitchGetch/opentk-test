@@ -9,10 +9,10 @@ public class Square
 
 	private readonly float[] vertices =
 	{
-		-0.5f, -0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.0f, 1.0f,
-		 0.5f,  0.5f,  1.0f, 1.0f
+		-0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
+		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
+		-0.5f,  0.5f, 0.0f,  0.0f, 1.0f,
+		 0.5f,  0.5f, 0.0f,  1.0f, 1.0f
 	};
 
 	private readonly uint[] indices =
@@ -21,13 +21,13 @@ public class Square
 		1, 2, 3
 	};
 
-	private Vector2 position;
-	private float rotation;
+	private Vector3 position;
 	private Vector2 scale;
+	private float rotation;
 
-	public Vector2 Position { get => position; set { position = value; SetModelMatrix(); } }
-	public float Rotation { get => rotation; set { rotation = value; SetModelMatrix(); } }
+	public Vector3 Position { get => position; set { position = value; SetModelMatrix(); } }
 	public Vector2 Scale { get => scale; set { scale = value; SetModelMatrix(); } }
+	public float Rotation { get => rotation; set { rotation = value; SetModelMatrix(); } }
 
 	private Matrix4 model;
 
@@ -49,23 +49,23 @@ public class Square
 		GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
 
 		GL.EnableVertexAttribArray(0);
-		GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
+		GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
 
 		ElementBufferObject = GL.GenBuffer();
 		GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
 		GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
 
 		GL.EnableVertexAttribArray(1);
-		GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
+		GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
 
 		GL.BindVertexArray(0);
 
 		GL.UseProgram(0);
 
 
-		Position = Vector2.Zero;
-		Rotation = 0;
+		Position = Vector3.Zero;
 		Scale = Vector2.One;
+		Rotation = 0;
 	}
 
 	public void Render()
@@ -76,7 +76,6 @@ public class Square
 
 		GL.UniformMatrix4(GL.GetUniformLocation(shader, "model"), true, ref model);
 
-		GL.Disable(EnableCap.DepthTest);
 		GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 
 		GL.BindVertexArray(0);
@@ -88,7 +87,7 @@ public class Square
 	{
 		model =
 			Matrix4.CreateRotationZ(rotation) *
-			Matrix4.CreateScale(new Vector3(scale.X, scale.Y, 0)) *
-			Matrix4.CreateTranslation(new Vector3(position.X, position.Y, 0));
+			Matrix4.CreateScale(new Vector3(scale)) *
+			Matrix4.CreateTranslation(position);
 	}
 }

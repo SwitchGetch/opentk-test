@@ -9,6 +9,9 @@ public class Camera
 
     public int shader;
 
+    private bool isPerspective;
+    public bool IsPerspective { get => isPerspective; set { isPerspective = value; SetProjectionMatrix(); } }
+
     private Vector2 viewport;
     private float fov;
 
@@ -83,14 +86,15 @@ public class Camera
     private Matrix4 view;
     private Matrix4 projection;
 
-    public Camera(int shader)
+    public Camera(int shader = 0, bool IsPerspective = true)
     {
         this.shader = shader;
+        isPerspective = IsPerspective;
 
-        Position = Vector3.Zero;
+        position = Vector3.Zero;
         Direction = Vector3.UnitZ;
 
-        FOV = MathHelper.DegreesToRadians(45.0f);
+        fov = MathHelper.DegreesToRadians(45.0f);
 
         Yaw = 0;
         Pitch = 0;
@@ -102,9 +106,28 @@ public class Camera
 
         Direction = Vector3.Normalize(Target - Position);
 
-        // рассчитать углы
+        float lx = (float)Math.Sqrt(Direction.Y * Direction.Y + Direction.Z * Direction.Z);
+        if (lx > 0) pitch = (float)Math.Acos(Direction.Z / lx) * Math.Sign(Direction.Y);
+        else pitch = 0;
+
+        float ly = (float)Math.Sqrt(Direction.X * Direction.X + Direction.Z * Direction.Z);
+        if (ly > 0)
+        {
+            yaw = (float)Math.Acos(Direction.Z / ly) * Math.Sign(-Direction.X);
+            Forward = Vector3.UnitZ * Matrix3.CreateRotationY(yaw);
+        }
 
         SetViewMatrix();
+    }
+
+    public void Use()
+    {
+        GL.UseProgram(shader);
+
+        GL.UniformMatrix4(GL.GetUniformLocation(shader, "view"), true, ref view);
+        GL.UniformMatrix4(GL.GetUniformLocation(shader, "projection"), true, ref projection);
+
+        GL.UseProgram(0);
     }
 
     private void SetDirection()
@@ -117,23 +140,13 @@ public class Camera
     private void SetViewMatrix()
     {
         view = Matrix4.LookAt(Position, Position + Direction, Vector3.UnitY);
-
-        GL.UseProgram(shader);
-
-        GL.UniformMatrix4(GL.GetUniformLocation(shader, "view"), true, ref view);
-
-        GL.UseProgram(0);
     }
 
     private void SetProjectionMatrix()
     {
-        projection = Matrix4.CreatePerspectiveFieldOfView(FOV, viewport.X / viewport.Y, 0.1f, 100.0f);
-
-		GL.UseProgram(shader);
-
-		GL.UniformMatrix4(GL.GetUniformLocation(shader, "projection"), true, ref projection);
-
-		GL.UseProgram(0);
+        projection = IsPerspective ? 
+            Matrix4.CreatePerspectiveFieldOfView(FOV, viewport.X / viewport.Y, 0.1f, 100.0f) : 
+            Matrix4.CreateOrthographicOffCenter(-0.5f * viewport.X, 0.5f * viewport.X, -0.5f * viewport.Y, 0.5f * viewport.Y, 0.1f, 100.0f);
 	}
 }
 
