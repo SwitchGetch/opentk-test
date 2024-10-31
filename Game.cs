@@ -57,18 +57,30 @@ public class Game : GameWindow
 
 		cubes = new List<Cube>()
 		{
-			new Cube(shader.Handle, stone.Handle) { Position = new Vector3(0, -0.5f, 0), Scale = new Vector3(20, 1, 20) },
+			new Cube(shader.Handle, stone.Handle) { Position = new Vector3(0, -0.5f, 0), Scale = new Vector3(40, 1, 40) },
         };
 
-		for (int x = -8; x <= 8; x += 4)
+		for (int x = -16; x <= 16; x += 4)
 		{
-			for (int y = 1; y <= 1; y += 1)
+			for (int y = 0; y <= 0; y += 2)
 			{
-				for (int z = -8; z <= 8; z += 4)
+				for (int z = -16; z <= 16; z += 4)
 				{
-					cubes.Add(new Cube(shader.Handle, box.Handle) {
-						Position = new Vector3(x, y, z),
-						Scale = new Vector3(2, 2, 2)});
+					Vector3 position = new Vector3();
+					Vector3 scale = new Vector3();
+
+					if ((Math.Abs(x) % 8 == 0) != (Math.Abs(z) % 8 == 0))
+					{
+						position = new Vector3(x, y + 0.5f, z);
+						scale = Vector3.One;
+					}
+					else
+					{
+						position = new Vector3(x, y + 1, z);
+						scale = Vector3.One * 2;
+					}
+
+					cubes.Add(new Cube(shader.Handle, box.Handle) { Position = position, Scale = scale });
 				}
 			}
 		}
@@ -109,7 +121,7 @@ public class Game : GameWindow
 		/*for (int i = 1; i < cubes.Count; i++)
 		{
 			cubes[i].Position *= Matrix3.CreateRotationY(deltaTime);
-			cubes[i].Position = new Vector3(cubes[i].Position.X, (float)Math.Sin(time) + 2, cubes[i].Position.Z);
+			//cubes[i].Position = new Vector3(cubes[i].Position.X, (float)Math.Sin(time) + 2, cubes[i].Position.Z);
 		}*/
 
 		UpdatePlayer();
@@ -218,7 +230,7 @@ public class Game : GameWindow
             player.Position += deltaTime * player.MovingSpeed * Vector3.Normalize(d);
         }
 
-		bool collision = false;
+		bool jumbAbility = false;
 
 		for (int i = 0; i < cubes.Count; i++)
 		{
@@ -234,33 +246,53 @@ public class Game : GameWindow
 
 			if (common.X >= 0 && common.Y >= 0 && common.Z >= 0)
 			{
-				d = new Vector3();
-
 				if (common.X <= common.Y && common.X <= common.Z)
 				{
-                    d.X = common.X * (playerMin.X == min.X ? -1 : 1);
+					if (playerMin.X == min.X)
+					{
+						player.Position -= new Vector3(common.X, 0, 0);
+					}
+					else
+					{
+						player.Position += new Vector3(common.X, 0, 0);
+					}
+
 					player.Speed.X = 0;
                 }
 
 				if (common.Y <= common.X && common.Y <= common.Z)
 				{
-                    d.Y = common.Y * (playerMin.Y == min.Y ? -1 : 1);
+					if (playerMin.Y == min.Y)
+					{
+						player.Position -= new Vector3(0, common.Y, 0);
+					}
+					else
+					{
+						player.Position += new Vector3(0, common.Y, 0);
+
+						jumbAbility = true;
+					}
+
                     player.Speed.Y = 0;
                 }
 
 				if (common.Z <= common.X && common.Z <= common.Y)
 				{
-                    d.Z = common.Z * (playerMin.Z == min.Z ? -1 : 1);
+					if (playerMin.Z == min.Z)
+					{
+						player.Position -= new Vector3(0, 0, common.Z);
+					}
+					else
+					{
+						player.Position += new Vector3(0, 0, common.Z);
+					}
+
                     player.Speed.Z = 0;
                 }
-
-				player.Position += d;
-
-                collision = true;
             }
 		}
 
-        if (collision && KeyboardState.IsKeyDown(Keys.Space)) player.Speed.Y = player.JumpingSpeed;
+        if (jumbAbility && KeyboardState.IsKeyDown(Keys.Space)) player.Speed.Y = player.JumpingSpeed;
 
         camera.Position = player.Position + 0.25f * player.Scale.Y * Vector3.UnitY;
     }
