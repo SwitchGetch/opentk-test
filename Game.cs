@@ -51,9 +51,9 @@ public class Game : GameWindow
 		player = new Player();
 		player.Position = new Vector3(0, 5, 0);
 		player.Scale = new Vector3(0.5f, 1, 0.5f);
-		player.MovingSpeed = 5;
+		player.MovingSpeed = 15;
 		player.RotationSpeed = 0.001f;
-		player.JumpingSpeed = 5;
+		player.JumpingSpeed = 7.5f;
 
 		cubes = new List<Cube>()
 		{
@@ -120,8 +120,7 @@ public class Game : GameWindow
 
 		/*for (int i = 1; i < cubes.Count; i++)
 		{
-			cubes[i].Position *= Matrix3.CreateRotationY(deltaTime);
-			//cubes[i].Position = new Vector3(cubes[i].Position.X, (float)Math.Sin(time) + 2, cubes[i].Position.Z);
+			cubes[i].Speed = cubes[i].Position * Matrix3.CreateRotationY(deltaTime) - cubes[i].Position;
 		}*/
 
 		UpdatePlayer();
@@ -265,12 +264,14 @@ public class Game : GameWindow
 					if (playerMin.Y == min.Y)
 					{
 						player.Position -= new Vector3(0, common.Y, 0);
-					}
+                    }
 					else
 					{
 						player.Position += new Vector3(0, common.Y, 0);
 
-						jumbAbility = true;
+                        player.Position += cubes[i].Speed;
+
+                        jumbAbility = true;
 					}
 
                     player.Speed.Y = 0;
@@ -290,7 +291,9 @@ public class Game : GameWindow
                     player.Speed.Z = 0;
                 }
             }
-		}
+
+            cubes[i].Position += cubes[i].Speed;
+        }
 
         if (jumbAbility && KeyboardState.IsKeyDown(Keys.Space)) player.Speed.Y = player.JumpingSpeed;
 

@@ -2,9 +2,6 @@
 
 public class Player : Cube
 {
-    public Vector3 Speed;
-    public Vector3 Acceleration;
-
 	public float MovingSpeed;
     public float JumpingSpeed;
 	public float RotationSpeed;

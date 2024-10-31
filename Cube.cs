@@ -77,7 +77,10 @@ public class Cube
 
     private Matrix4 model;
 
-	public int shader;
+    public Vector3 Speed;
+    public Vector3 Acceleration;
+
+    public int shader;
 	public int texture;
 
 	public Cube(int shader = 0, int texture = 0)
@@ -112,6 +115,9 @@ public class Cube
 		Position = Vector3.Zero;
 		Rotation = Vector3.Zero;
 		Scale = Vector3.One;
+
+		Speed = Vector3.Zero;
+		Acceleration = Vector3.Zero;
 	}
 
 	public void Render()
