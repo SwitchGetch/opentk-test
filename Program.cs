@@ -10,8 +10,8 @@ class Program
 
         NativeWindowSettings nativeWindowSettings = new NativeWindowSettings()
         {
-            //ClientSize = new Vector2i(1600, 900),
-            WindowState = WindowState.Fullscreen,
+            ClientSize = new Vector2i(1600, 900),
+            //WindowState = WindowState.Fullscreen,
             Vsync = VSyncMode.On,
             Title = "test"
         };

@@ -22,6 +22,8 @@ public class Game : GameWindow
 	List<Cube> cubes;
 	Square crosshair;
 
+	List<Cube> bulletTraces;
+
 	Camera camera;
 	Camera camera2D;
 
@@ -43,6 +45,7 @@ public class Game : GameWindow
         CursorState = CursorState.Grabbed;	
 
         shader = new Shader("shader.vert", "shader.frag");
+		shader.Use();
 
 		box = new Texture("box.jpg");
 		stone = new Texture("stone.jpg");
@@ -51,13 +54,13 @@ public class Game : GameWindow
 		player = new Player();
 		player.Position = new Vector3(0, 5, 0);
 		player.Scale = new Vector3(0.5f, 1, 0.5f);
-		player.MovingSpeed = 15;
+		player.MovingSpeed = 5;
 		player.RotationSpeed = 0.001f;
-		player.JumpingSpeed = 7.5f;
+		player.JumpingSpeed = 5;
 
 		cubes = new List<Cube>()
 		{
-			new Cube(shader.Handle, stone.Handle) { Position = new Vector3(0, -0.5f, 0), Scale = new Vector3(40, 1, 40) },
+			new Cube() { texture = stone.Handle, Position = new Vector3(0, -0.5f, 0), Scale = new Vector3(40, 1, 40) },
         };
 
 		for (int x = -16; x <= 16; x += 4)
@@ -80,20 +83,23 @@ public class Game : GameWindow
 						scale = Vector3.One * 2;
 					}
 
-					cubes.Add(new Cube(shader.Handle, box.Handle) { Position = position, Scale = scale });
+					cubes.Add(new Cube() { texture = box.Handle, Position = position, Scale = scale });
 				}
 			}
 		}
 
-        camera = new Camera(shader.Handle);
+		bulletTraces = new List<Cube>();
+
+        camera = new Camera();
 		camera.Viewport = ClientSize;
 		camera.FOV = MathHelper.DegreesToRadians(60.0f);
 
-		camera2D = new Camera(shader.Handle, false);
+		camera2D = new Camera(false);
 		camera2D.Viewport = ClientSize;
 		camera2D.LookAt(-Vector3.UnitZ);
 
-        crosshair = new Square(shader.Handle, cross.Handle);
+        crosshair = new Square();
+		crosshair.texture = cross.Handle;
 		crosshair.Position = new Vector3(0, 0, -1);
 		crosshair.Scale = 50 * Vector2.One;
 
@@ -133,10 +139,11 @@ public class Game : GameWindow
 		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
 		camera.Use();
-		for (int i = 0; i < cubes.Count; i++) cubes[i].Render();
+        for (int i = 0; i < cubes.Count; i++) cubes[i].Render();
+		for (int i = 0; i < bulletTraces.Count; i++) bulletTraces[i].Render();
 
 		camera2D.Use();
-		crosshair.Render();
+        crosshair.Render();
 
 		SwapBuffers();
 	}
@@ -158,6 +165,15 @@ public class Game : GameWindow
 		camera2D.Viewport = ClientSize;
 
 		shader.SetVector2("u_resolution", ClientSize);
+    }
+
+    protected override void OnMouseDown(MouseButtonEventArgs e)
+    {
+        base.OnMouseDown(e);
+
+		if (e.Button != MouseButton.Left) return;
+
+		Shoot();
     }
 
     protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -187,6 +203,8 @@ public class Game : GameWindow
 
 	private void MouseHandler()
 	{
+		if (MouseState.IsButtonDown(MouseButton.Right)) Shoot();
+
 		Vector2 d = MouseState.Delta;
 
 		if (d.X == 0 && d.Y == 0) return;
@@ -269,8 +287,6 @@ public class Game : GameWindow
 					{
 						player.Position += new Vector3(0, common.Y, 0);
 
-                        player.Position += cubes[i].Speed;
-
                         jumbAbility = true;
 					}
 
@@ -291,12 +307,55 @@ public class Game : GameWindow
                     player.Speed.Z = 0;
                 }
             }
-
-            cubes[i].Position += cubes[i].Speed;
         }
 
         if (jumbAbility && KeyboardState.IsKeyDown(Keys.Space)) player.Speed.Y = player.JumpingSpeed;
 
         camera.Position = player.Position + 0.25f * player.Scale.Y * Vector3.UnitY;
+    }
+
+	private void Shoot()
+	{
+        int iNearest = -1;
+        float tNearest = -1;
+
+        for (int i = 0; i < cubes.Count; i++)
+        {
+            Vector3 tMin = (cubes[i].Position - 0.5f * cubes[i].Scale - camera.Position) / camera.Direction;
+            Vector3 tMax = (cubes[i].Position + 0.5f * cubes[i].Scale - camera.Position) / camera.Direction;
+
+            if (tMin.X > tMax.X) (tMin.X, tMax.X) = (tMax.X, tMin.X);
+            if (tMin.Y > tMax.Y) (tMin.Y, tMax.Y) = (tMax.Y, tMin.Y);
+            if (tMin.Z > tMax.Z) (tMin.Z, tMax.Z) = (tMax.Z, tMin.Z);
+
+            float tEnter = new float[] { tMin.X, tMin.Y, tMin.Z }.Max();
+            float tExit = new float[] { tMax.X, tMax.Y, tMax.Z }.Min();
+
+            if (tEnter <= tExit && tExit > 0)
+            {
+                if (iNearest != -1)
+                {
+                    if (tNearest > tEnter)
+                    {
+                        iNearest = i;
+                        tNearest = tEnter;
+                    }
+                }
+                else
+                {
+                    iNearest = i;
+                    tNearest = tEnter;
+                }
+            }
+        }
+
+        if (iNearest != -1)
+        {
+            bulletTraces.Add(new Cube
+            {
+                Position = camera.Position + tNearest * camera.Direction,
+                Scale = new Vector3(0.1f)
+            });
+        }
     }
 }
