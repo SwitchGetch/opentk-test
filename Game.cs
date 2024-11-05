@@ -22,6 +22,7 @@ public class Game : GameWindow
 	List<Cube> cubes;
 	Square crosshair;
 
+	List<Cube> bulletTrails;
 	List<Cube> bulletTraces;
 
 	Camera camera;
@@ -88,6 +89,7 @@ public class Game : GameWindow
 			}
 		}
 
+		bulletTrails = new List<Cube>();
 		bulletTraces = new List<Cube>();
 
         camera = new Camera();
@@ -140,6 +142,7 @@ public class Game : GameWindow
 
 		camera.Use();
         for (int i = 0; i < cubes.Count; i++) cubes[i].Render();
+		for (int i = 0; i < bulletTraces.Count; i++) bulletTrails[i].Render();
 		for (int i = 0; i < bulletTraces.Count; i++) bulletTraces[i].Render();
 
 		camera2D.Use();
@@ -197,7 +200,7 @@ public class Game : GameWindow
             seconds = (int)time;
 			frames = 0;
 
-            Title = "FPS: " + fps;
+            Title = $"FPS: {fps}";
         }
 	}
 
@@ -351,11 +354,19 @@ public class Game : GameWindow
 
         if (iNearest != -1)
         {
-            bulletTraces.Add(new Cube
-            {
-                Position = camera.Position + tNearest * camera.Direction,
-                Scale = new Vector3(0.1f)
-            });
+			
+
+            Cube trail = new Cube();
+			trail.Position = camera.Position + 0.5f * tNearest * camera.Direction;
+			trail.Scale = new Vector3(0.05f, 0.05f, tNearest);
+			trail.Rotation = new Vector3(camera.Pitch, camera.Yaw, 0);
+
+            Cube trace = new Cube();
+            trace.Position = camera.Position + tNearest * camera.Direction;
+			trace.Scale = new Vector3(0.1f);
+
+            bulletTrails.Add(trail);
+			bulletTraces.Add(trace);
         }
     }
 }
