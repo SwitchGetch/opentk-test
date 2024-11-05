@@ -78,6 +78,7 @@ public class Cube
     private Matrix4 model;
 
 	public int texture;
+	public float Opacity;
 
 	static Cube()
 	{
@@ -102,6 +103,7 @@ public class Cube
 	public Cube()
 	{
 		texture = 0;
+		Opacity = 1;
 
 		Position = Vector3.Zero;
 		Rotation = Vector3.Zero;
@@ -114,6 +116,7 @@ public class Cube
 		GL.BindTexture(TextureTarget.Texture2D, texture);
 
         GL.UniformMatrix4(GL.GetUniformLocation(GL.GetInteger(GetPName.CurrentProgram), "model"), true, ref model);
+        GL.Uniform1(GL.GetUniformLocation(GL.GetInteger(GetPName.CurrentProgram), "alpha"), Math.Clamp(Opacity, 0.0f, 1.0f));
 
 		GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 	}

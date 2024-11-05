@@ -24,6 +24,10 @@ public class Game : GameWindow
 
 	List<Cube> bulletTrails;
 	List<Cube> bulletTraces;
+	float trailFadeOut;
+	float traceFadeOut;
+	float trailOffset;
+	float traceOffset;
 
 	Camera camera;
 	Camera camera2D;
@@ -92,6 +96,11 @@ public class Game : GameWindow
 		bulletTrails = new List<Cube>();
 		bulletTraces = new List<Cube>();
 
+		trailFadeOut = 1.0f;
+		traceFadeOut = 2.0f;
+		trailOffset = 0.0f;
+		traceOffset = 1.0f;
+
         camera = new Camera();
 		camera.Viewport = ClientSize;
 		camera.FOV = MathHelper.DegreesToRadians(60.0f);
@@ -105,13 +114,13 @@ public class Game : GameWindow
 		crosshair.Position = new Vector3(0, 0, -1);
 		crosshair.Scale = 50 * Vector2.One;
 
-		shader.SetVector2("u_resolution", (Vector2)ClientSize);
+		shader.SetVector2("resolution", (Vector2)ClientSize);
 
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Blend);
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-        time = 0;
+		time = 0;
 		deltaTime = 0;
 		fps = 0;
 		seconds = 0;
@@ -125,6 +134,28 @@ public class Game : GameWindow
 		TimeHandler(args.Time);
         MouseHandler();
 		KeyboardHandler();
+
+		for (int i = 0; i < bulletTrails.Count; i++)
+		{
+			bulletTrails[i].Opacity -= deltaTime / trailFadeOut;
+
+			if (bulletTrails[i].Opacity <= 0)
+			{
+				bulletTrails.RemoveAt(i);
+				i--;
+			}
+		}
+
+		for (int i = 0; i < bulletTraces.Count; i++)
+		{
+			bulletTraces[i].Opacity -= deltaTime / traceFadeOut;
+
+			if (bulletTraces[i].Opacity <= 0)
+			{
+				bulletTraces.RemoveAt(i);
+				i--;
+			}
+		}
 
 		/*for (int i = 1; i < cubes.Count; i++)
 		{
@@ -142,8 +173,8 @@ public class Game : GameWindow
 
 		camera.Use();
         for (int i = 0; i < cubes.Count; i++) cubes[i].Render();
-		for (int i = 0; i < bulletTraces.Count; i++) bulletTrails[i].Render();
 		for (int i = 0; i < bulletTraces.Count; i++) bulletTraces[i].Render();
+		for (int i = 0; i < bulletTrails.Count; i++) bulletTrails[i].Render();
 
 		camera2D.Use();
         crosshair.Render();
@@ -167,7 +198,7 @@ public class Game : GameWindow
 		camera.Viewport = ClientSize;
 		camera2D.Viewport = ClientSize;
 
-		shader.SetVector2("u_resolution", ClientSize);
+		shader.SetVector2("resolution", ClientSize);
     }
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -192,7 +223,7 @@ public class Game : GameWindow
 		time += deltaTime;
         frames++;
 
-		shader.SetFloat("u_time", time);
+		shader.SetFloat("time", time);
 
 		if (seconds < (int)time)
 		{
@@ -352,21 +383,25 @@ public class Game : GameWindow
             }
         }
 
-        if (iNearest != -1)
+		Cube trail = new Cube();
+		trail.Scale = new Vector3(0.05f, 0.05f, 100.0f);
+		trail.Rotation = new Vector3(camera.Pitch, camera.Yaw, 0);
+		trail.Position = camera.Position + 50.0f * camera.Direction;
+		trail.Opacity += trailOffset / trailFadeOut;
+
+		if (iNearest != -1)
         {
-			
-
-            Cube trail = new Cube();
-			trail.Position = camera.Position + 0.5f * tNearest * camera.Direction;
 			trail.Scale = new Vector3(0.05f, 0.05f, tNearest);
-			trail.Rotation = new Vector3(camera.Pitch, camera.Yaw, 0);
+			trail.Position = camera.Position + 0.5f * tNearest * camera.Direction;
 
-            Cube trace = new Cube();
-            trace.Position = camera.Position + tNearest * camera.Direction;
+			Cube trace = new Cube();
 			trace.Scale = new Vector3(0.1f);
+            trace.Position = camera.Position + tNearest * camera.Direction;
+			trace.Opacity += traceOffset / traceFadeOut;
 
-            bulletTrails.Add(trail);
 			bulletTraces.Add(trace);
         }
-    }
+
+		bulletTrails.Add(trail);
+	}
 }

@@ -33,6 +33,9 @@ public class Square
 
 	public int texture;
 
+	private float opacity;
+	public float Opacity { get => opacity; set => opacity = Math.Clamp(value, 0.0f, 1.0f); }
+
 	static Square()
 	{
         VertexArrayObject = GL.GenVertexArray();
@@ -56,6 +59,7 @@ public class Square
 	public Square()
 	{
 		texture = 0;
+		opacity = 1;
 
 		Position = Vector3.Zero;
 		Scale = Vector2.One;
@@ -68,6 +72,7 @@ public class Square
 		GL.BindTexture(TextureTarget.Texture2D, texture);
 
         GL.UniformMatrix4(GL.GetUniformLocation(GL.GetInteger(GetPName.CurrentProgram), "model"), true, ref model);
+		GL.Uniform1(GL.GetUniformLocation(GL.GetInteger(GetPName.CurrentProgram), "alpha"), opacity);
 
 		GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 	}

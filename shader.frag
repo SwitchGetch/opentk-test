@@ -3,9 +3,10 @@ out vec4 FragColor;
 
 in vec2 texCoord;
 
-uniform float u_time;
-uniform vec2 u_resolution;
+uniform float time;
+uniform vec2 resolution;
 uniform sampler2D texture0;
+uniform float alpha;
 
 void main()
 {
@@ -17,5 +18,9 @@ void main()
     //if (texColor.a == 1.0) FragColor = mix(color, texColor, 0.5);
     //else FragColor = texColor;
 
-    FragColor = texture(texture0, texCoord);
+    vec4 color = texture(texture0, texCoord);
+
+    if (color.a == 1.0) color.a = alpha;
+
+    FragColor = color;
 }
