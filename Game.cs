@@ -28,6 +28,10 @@ public class Game : GameWindow
 	float traceFadeOut;
 	float trailOffset;
 	float traceOffset;
+	bool renderTrails;
+	bool renderTraces;
+
+	float spreadAngle;
 
 	Camera camera;
 	Camera camera2D;
@@ -37,6 +41,8 @@ public class Game : GameWindow
 	float fps;
 	float seconds;
 	float frames;
+
+	Random random;
 
 
 	protected override void OnLoad()
@@ -61,7 +67,7 @@ public class Game : GameWindow
 		player.Scale = new Vector3(0.5f, 1, 0.5f);
 		player.MovingSpeed = 5;
 		player.RotationSpeed = 0.001f;
-		player.JumpingSpeed = 5;
+		player.JumpingSpeed = 10;
 
 		cubes = new List<Cube>()
 		{
@@ -70,7 +76,7 @@ public class Game : GameWindow
 
 		for (int x = -16; x <= 16; x += 4)
 		{
-			for (int y = 0; y <= 0; y += 2)
+			for (int y = 0; y <= 20; y += 4)
 			{
 				for (int z = -16; z <= 16; z += 4)
 				{
@@ -97,9 +103,13 @@ public class Game : GameWindow
 		bulletTraces = new List<Cube>();
 
 		trailFadeOut = 1.0f;
-		traceFadeOut = 2.0f;
+		traceFadeOut = 1.0f;
 		trailOffset = 0.0f;
 		traceOffset = 1.0f;
+		renderTrails = true;
+		renderTraces = true;
+
+		spreadAngle = 0.1f;
 
         camera = new Camera();
 		camera.Viewport = ClientSize;
@@ -125,6 +135,8 @@ public class Game : GameWindow
 		fps = 0;
 		seconds = 0;
 		frames = 0;
+
+		random = new Random();
     }
 
 	protected override void OnUpdateFrame(FrameEventArgs args)
@@ -173,8 +185,8 @@ public class Game : GameWindow
 
 		camera.Use();
         for (int i = 0; i < cubes.Count; i++) cubes[i].Render();
-		for (int i = 0; i < bulletTraces.Count; i++) bulletTraces[i].Render();
-		for (int i = 0; i < bulletTrails.Count; i++) bulletTrails[i].Render();
+		if (renderTraces) for (int i = bulletTraces.Count - 1; i >= 0; i--) bulletTraces[i].Render();
+		if (renderTrails) for (int i = bulletTrails.Count - 1; i >= 0; i--) bulletTrails[i].Render();
 
 		camera2D.Use();
         crosshair.Render();
@@ -205,9 +217,14 @@ public class Game : GameWindow
     {
         base.OnMouseDown(e);
 
-		if (e.Button != MouseButton.Left) return;
+		switch (e.Button)
+		{
+			case MouseButton.Left:
 
-		Shoot();
+				Shoot(Spread(camera.Direction, spreadAngle));
+
+				break;
+		}
     }
 
     protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -237,7 +254,7 @@ public class Game : GameWindow
 
 	private void MouseHandler()
 	{
-		if (MouseState.IsButtonDown(MouseButton.Right)) Shoot();
+		if (MouseState.IsButtonDown(MouseButton.Right)) Shoot(Spread(camera.Direction, spreadAngle));
 
 		Vector2 d = MouseState.Delta;
 
@@ -343,20 +360,20 @@ public class Game : GameWindow
             }
         }
 
-        if (jumbAbility && KeyboardState.IsKeyDown(Keys.Space)) player.Speed.Y = player.JumpingSpeed;
+        if ((true || jumbAbility) && KeyboardState.IsKeyDown(Keys.Space)) player.Speed.Y = player.JumpingSpeed;
 
         camera.Position = player.Position + 0.25f * player.Scale.Y * Vector3.UnitY;
     }
 
-	private void Shoot()
+	private void Shoot(Vector3 Direction)
 	{
         int iNearest = -1;
         float tNearest = -1;
 
         for (int i = 0; i < cubes.Count; i++)
         {
-            Vector3 tMin = (cubes[i].Position - 0.5f * cubes[i].Scale - camera.Position) / camera.Direction;
-            Vector3 tMax = (cubes[i].Position + 0.5f * cubes[i].Scale - camera.Position) / camera.Direction;
+            Vector3 tMin = (cubes[i].Position - 0.5f * cubes[i].Scale - camera.Position) / Direction;
+            Vector3 tMax = (cubes[i].Position + 0.5f * cubes[i].Scale - camera.Position) / Direction;
 
             if (tMin.X > tMax.X) (tMin.X, tMax.X) = (tMax.X, tMin.X);
             if (tMin.Y > tMax.Y) (tMin.Y, tMax.Y) = (tMax.Y, tMin.Y);
@@ -383,25 +400,47 @@ public class Game : GameWindow
             }
         }
 
+		Vector3 hit = camera.Position + Direction * (iNearest != -1 ? tNearest : 100);
+		Vector3 dir = Vector3.Normalize(hit - player.Position);
+		float dist = Vector3.Distance(player.Position, hit);
+
 		Cube trail = new Cube();
 		trail.Scale = new Vector3(0.05f, 0.05f, 100.0f);
-		trail.Rotation = new Vector3(camera.Pitch, camera.Yaw, 0);
-		trail.Position = camera.Position + 50.0f * camera.Direction;
-		trail.Opacity += trailOffset / trailFadeOut;
+		trail.Rotation = FindRotation(dir);
+		trail.Position = player.Position + 50.0f * dir;
+		//trail.Opacity += trailOffset / trailFadeOut;
+		trail.Opacity = 0.5f;
 
 		if (iNearest != -1)
         {
-			trail.Scale = new Vector3(0.05f, 0.05f, tNearest);
-			trail.Position = camera.Position + 0.5f * tNearest * camera.Direction;
+			trail.Scale = new Vector3(0.05f, 0.05f, dist);
+			trail.Position = player.Position + 0.5f * dist * dir;
 
 			Cube trace = new Cube();
 			trace.Scale = new Vector3(0.1f);
-            trace.Position = camera.Position + tNearest * camera.Direction;
+            trace.Position = hit;
 			trace.Opacity += traceOffset / traceFadeOut;
 
 			bulletTraces.Add(trace);
         }
 
 		bulletTrails.Add(trail);
+	}
+
+	private Vector3 Spread(Vector3 Direction, float Angle)
+	{
+		return Direction *
+			Matrix3.CreateRotationX(((float)random.NextDouble() - 0.5f) * Angle) *
+			Matrix3.CreateRotationY(((float)random.NextDouble() - 0.5f) * Angle) *
+			Matrix3.CreateRotationZ(((float)random.NextDouble() - 0.5f) * Angle);
+	}
+
+	private Vector3 FindRotation(Vector3 Direction)
+	{
+		float l = (float)Math.Sqrt(Direction.X * Direction.X + Direction.Z * Direction.Z);
+		float pitch = -(float)Math.Acos(l) * Math.Sign(Direction.Y);
+		float yaw = (float)Math.Acos(Direction.Z / l) * Math.Sign(Direction.X);
+
+		return new Vector3(pitch, yaw, 0);
 	}
 }
