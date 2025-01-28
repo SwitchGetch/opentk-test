@@ -9,6 +9,8 @@ public class Player : Cube
     public Vector3 Speed;
     public Vector3 Acceleration;
 
+    public string ID;
+
     public Player()
     {
         Speed = Vector3.Zero;
@@ -17,5 +19,7 @@ public class Player : Cube
         MovingSpeed = 1;
         JumpingSpeed = 1;
         RotationSpeed = 1;
+
+        ID = "";
     }
 }

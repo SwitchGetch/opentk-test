@@ -103,16 +103,22 @@ public class Camera
 
         Direction = Vector3.Normalize(Target - Position);
 
-        float lx = (float)Math.Sqrt(Direction.Y * Direction.Y + Direction.Z * Direction.Z);
-        if (lx > 0) pitch = (float)Math.Acos(Direction.Z / lx) * Math.Sign(Direction.Y);
-        else pitch = 0;
+        float l = (float)Math.Sqrt(Direction.X * Direction.X + Direction.Z * Direction.Z);
+        float pitch = -(float)Math.Acos(l) * Math.Sign(Direction.Y);
+        float yaw = (float)Math.Acos(Direction.Z / l) * Math.Sign(Direction.X);
 
-        float ly = (float)Math.Sqrt(Direction.X * Direction.X + Direction.Z * Direction.Z);
-        if (ly > 0)
-        {
-            yaw = (float)Math.Acos(Direction.Z / ly) * Math.Sign(-Direction.X);
-            Forward = Vector3.UnitZ * Matrix3.CreateRotationY(yaw);
-        }
+        Forward = Vector3.UnitZ * Matrix3.CreateRotationY(yaw);
+
+        //float lx = (float)Math.Sqrt(Direction.Y * Direction.Y + Direction.Z * Direction.Z);
+        //if (lx > 0) pitch = (float)Math.Acos(Direction.Z / lx) * Math.Sign(Direction.Y);
+        //else pitch = 0;
+
+        //float ly = (float)Math.Sqrt(Direction.X * Direction.X + Direction.Z * Direction.Z);
+        //if (ly > 0)
+        //{
+        //    yaw = (float)Math.Acos(Direction.Z / ly) * Math.Sign(-Direction.X);
+        //    Forward = Vector3.UnitZ * Matrix3.CreateRotationY(yaw);
+        //}
 
         SetViewMatrix();
     }
